@@ -58,7 +58,7 @@
               document.getElementById('status').innerText = "Enregistrement en cours...";
 
               // Enregistrement sécurisé dans la table Joueurs de Supabase via l'API REST
-              const response = await fetch(`https://TON_PROJECT_REF.supabase.co/rest/v1/Joueurs?id=eq.${userId}`, {
+              const response = await fetch(`https://puznnphyulbrnxjojnnc.supabase.co/rest/v1/Joueurs?id=eq.${userId}`, {
                 method: 'PATCH',
                 headers: {
                   'Content-Type': 'application/json',
