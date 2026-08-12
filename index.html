@@ -14,10 +14,10 @@
         <p>Veuillez accepter la pop-up de votre navigateur.</p>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-messaging-compat.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+      import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-messaging.js";
 
-    <script>
       const firebaseConfig = {
         apiKey: "AIzaSyCjh-8QKGlPXvaGebV4mUzOS1nZTsvic24",
         authDomain: "notif-pronos.firebaseapp.com",
@@ -27,23 +27,24 @@
         appId: "1:38774071291:web:9a651309225128598d355e"
       };
 
-      firebase.initializeApp(firebaseConfig);
-      const messaging = firebase.messaging();
+      const app = initializeApp(firebaseConfig);
+      const messaging = getMessaging(app);
 
       async function initPush() {
         try {
-          // 1. Enregistrement manuel du Service Worker au bon endroit
-          const registration = await navigator.serviceWorker.register('/notif-pronos/firebase-messaging-sw.js');
-          
-          // 2. Dire à Firebase d'utiliser ce worker spécifique
-          messaging.useServiceWorker(registration);
-
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
+            document.getElementById('status').innerText = "Enregistrement du service worker...";
+            
+            // On enregistre explicitement le worker dans le sous-dossier GitHub Pages (/notif-pronos/)
+            const registration = await navigator.serviceWorker.register('/notif-pronos/firebase-messaging-sw.js');
+
             document.getElementById('status').innerText = "Génération du jeton...";
             
-            const token = await messaging.getToken({
-              vapidKey: 'BOIFbJ36HvSEWbG_0ztnYhAgk297l2b_sLkkkFrq2-NK5PEswJm1aupdn6kGCG3-mJK-S5QLAU2lUZwpaqwN3aQ'
+            // On passe directement le worker ici pour éviter toute erreur de chemin
+            const token = await getToken(messaging, {
+              vapidKey: 'BOIFbJ36HvSEWbG_0ztnYhAgk297l2b_sLkkkFrq2-NK5PEswJm1aupdn6kGCG3-mJK-S5QLAU2lUZwpaqwN3aQ',
+              serviceWorkerRegistration: registration
             });
 
             if (token) {
@@ -57,13 +58,12 @@
 
               document.getElementById('status').innerText = "Enregistrement en cours...";
 
-              // Enregistrement sécurisé dans la table Joueurs de Supabase via l'API REST
               const response = await fetch(`https://puznnphyulbrnxjojnnc.supabase.co/rest/v1/Joueurs?id=eq.${userId}`, {
                 method: 'PATCH',
                 headers: {
                   'Content-Type': 'application/json',
                   'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1em5ucGh5dWxicm54am9qbm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NTg2NzUsImV4cCI6MjA5NzUzNDY3NX0.Gx70QsVuPp7Srfo-IAj5eJdiwo4waoHt4yN01Nm9SBM',
-                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1em5ucGh5dWxicm54am9qbm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NTg2NzUsImV4cCI6MjA5NzUzNDY3NX0.Gx70QsVuPp7Srfo-IAj5eJdiwo4waoHt4yN01Nm9SBM'
+                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1em5ucGh5dWxicm54am9qbm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NTg2NzUsImV4cCI6MjA5NzUzNDY3NX0.Gx70QsVuPp7Srfo-IAj5eJdiwo4waoHt4yN01Nm9SBM''
                 },
                 body: JSON.stringify({ push_token: token })
               });
@@ -75,7 +75,7 @@
               }
             }
           } else {
-            document.getElementById('status').innerText = "❌ Permission refusée. Tu dois autoriser les notifications dans les réglages de ton navigateur.";
+            document.getElementById('status').innerText = "❌ Permission refusée. Tu dois autoriser les notifications.";
           }
         } catch (error) {
           console.error(error);
