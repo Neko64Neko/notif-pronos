@@ -32,6 +32,12 @@
 
       async function initPush() {
         try {
+          // 1. Enregistrement manuel du Service Worker au bon endroit
+          const registration = await navigator.serviceWorker.register('/notif-pronos/firebase-messaging-sw.js');
+          
+          // 2. Dire à Firebase d'utiliser ce worker spécifique
+          messaging.useServiceWorker(registration);
+
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
             document.getElementById('status').innerText = "Génération du jeton...";
